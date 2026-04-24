@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniSearch | Әмбебап Іздеу</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --accent: #38bdf8;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at 50% -20%, #1e293b, #0f172a);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; }
+
+        /* Үстіңгі деректер */
+        .header-widgets {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            gap: 15px;
+        }
+
+        .widget {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            padding: 15px 25px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            flex: 1;
+            text-align: center;
+        }
+
+        /* Іздеу аймағы */
+        .search-area {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 { font-size: 2.5rem; margin-bottom: 20px; font-weight: 800; letter-spacing: -1px; }
+
+        .search-box {
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
+            padding: 8px;
+            border-radius: 100px;
+            display: flex;
+            transition: 0.3s;
+        }
+
+        .search-box:focus-within {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 12px 25px;
+            color: white;
+            font-size: 1.1rem;
+            outline: none;
+        }
+
+        button {
+            background: var(--accent);
+            color: #0f172a;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 100px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover { transform: scale(1.05); background: #7dd3fc; }
+
+        /* Нәтижелер */
+        .result-item {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 24px;
+            margin-bottom: 15px;
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-item h3 { color: var(--accent); margin-bottom: 10px; }
+        .result-item p { line-height: 1.6; color: #cbd5e1; }
+        
+        .external-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .external-link:hover { text-decoration: underline; }
+
+        @media (max-width: 600px) {
+            .header-widgets { flex-direction: column; }
+            h1 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-widgets">
+        <div class="widget">
+            <div id="temp" style="font-size: 1.5rem; font-weight: bold;">--°C</div>
+            <div style="font-size: 0.8rem; opacity: 0.6;">Ауа райы (Қызылорда)</div>
+        </div>
+        <div class="widget">
+            <div id="currency" style="font-size: 1.2rem; font-weight: bold;">USD: -- ₸</div>
+            <div style="font-size: 0.8rem; opacity: 0.6;">Теңге бағамы</div>
+        </div>
+    </div>
+
+    <div class="search-area">
+        <h1>OmniSearch AI</h1>
+        <div class="search-box">
+            <input type="text" id="userInput" placeholder="Кез келген сұрақ немесе сөз жазыңыз...">
+            <button onclick="globalSearch()">Іздеу</button>
+        </div>
+    </div>
+
+    <div id="results">
+        </div>
+</div>
+
+<script>
+    async function globalSearch() {
+        const query = document.getElementById('userInput').value.trim();
+        const resultsDiv = document.getElementById('results');
+        
+        if (!query) return;
+
+        resultsDiv.innerHTML = '<div style="text-align:center; padding: 50px; opacity: 0.5;">Жүйе іздеп жатыр...</div>';
+
+        try {
+            // 1. DuckDuckGo API (Анықтамалар мен фактология үшін)
+            const ddgUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&origin=*`;
+            const response = await fetch(ddgUrl);
+            const data = await response.json();
+
+            resultsDiv.innerHTML = "";
+
+            // Егер нақты анықтама табылса (Мысалы: Apple, Almaty, Mars)
+            if (data.AbstractText) {
+                resultsDiv.innerHTML += `
+                    <div class="result-item">
+                        <h3>🔍 Анықтама: ${data.Heading}</h3>
+                        <p>${data.AbstractText}</p>
+                        <a href="${data.AbstractURL}" class="external-link" target="_blank">Толығырақ оқу →</a>
+                    </div>
+                `;
+            }
+
+            // 2. Wikipedia API (Қосымша деректер үшін)
+            const wikiUrl = `https://kk.wikipedia.org/w/api.php?action=query&list=search&srsearch=${query}&format=json&origin=*`;
+            const wikiRes = await fetch(wikiUrl);
+            const wikiData = await wikiRes.json();
+
+            if (wikiData.query.search.length > 0) {
+                wikiData.query.search.slice(0, 2).forEach(item => {
+                    resultsDiv.innerHTML += `
+                        <div class="result-item">
+                            <h3>📖 Wikipedia: ${item.title}</h3>
+                            <p>${item.snippet}...</p>
+                            <a href="https://kk.wikipedia.org/wiki/${item.title}" class="external-link" target="_blank">Мақаланы ашу →</a>
+                        </div>
+                    `;
+                });
+            }
+
+            // 3. Google-дан іздеуге көмекші сілтеме (Егер ештеңе табылса да, табылмаса да)
+            resultsDiv.innerHTML += `
+                <div class="result-item" style="border-color: rgba(255,255,255,0.05); opacity: 0.8;">
+                    <h3>🌐 Интернеттен іздеу</h3>
+                    <p>"${query}" бойынша басқа да нәтижелерді Google немесе Bing арқылы көргіңіз келе ме?</p>
+                    <a href="https://www.google.com/search?q=${encodeURIComponent(query)}" class="external-link" target="_blank">Google-дан іздеу ➔</a>
+                    <a href="https://www.bing.com/search?q=${encodeURIComponent(query)}" class="external-link" style="margin-left: 20px;" target="_blank">Bing-ден іздеу ➔</a>
+                </div>
+            `;
+
+        } catch (error) {
+            resultsDiv.innerHTML = '<div class="result-item">Іздеу кезінде қате кетті. Қайталап көріңіз.</div>';
+        }
+    }
+
+    // Ауа райы мен Валюта деректерін алу
+    async function getMeta() {
+        try {
+            const w = await fetch('https://api.open-meteo.com/v1/forecast?latitude=44.83&longitude=65.50&current_weather=true');
+            const dW = await w.json();
+            document.getElementById('temp').innerText = dW.current_weather.temperature + "°C";
+
+            const c = await fetch('https://open.er-api.com/v6/latest/KZT');
+            const dC = await c.json();
+            document.getElementById('currency').innerText = `USD: ${(1/dC.rates.USD).toFixed(1)} ₸`;
+        } catch(e) {}
+    }
+
+    // ENTER пернесін басу
+    document.getElementById('userInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') globalSearch();
+    });
+
+    window.onload = getMeta;
+</script>
+</body>
+</html>
